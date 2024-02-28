@@ -1,16 +1,17 @@
-import { assert } from 'chai';
-import { Items } from './collections';
-import { Meteor } from 'meteor/meteor';
-// import {Counter} from 'meteor/natestrauser:publish-performant-counts'
+/* eslint-env mocha */
+
+import { assert } from 'chai'
+import { Items } from './collections'
+import { Meteor } from 'meteor/meteor'
 
 describe('Testing custom publications functionality', function () {
-    it('Should be able to retrieve the correct number', function (done) {
-        Meteor.call('custom_publications_boot', function () {
-            Meteor.subscribe('custom_publications', function () {
-                assert.lengthOf(Items.find().fetch(), 3);
-                done();
-            })
+  it('Should be able to retrieve the correct number', function (done) {
+    Meteor.callAsync('custom_publications_boot')
+      .then(function () {
+        Meteor.subscribe('custom_publications', function () {
+          assert.lengthOf(Items.find().fetch(), 3)
+          done()
         })
-    });
-});
-
+      })
+  })
+})
