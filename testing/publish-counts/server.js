@@ -1,24 +1,24 @@
-import { Meteor } from 'meteor/meteor';
+import { Meteor } from 'meteor/meteor'
 import { Counter } from 'meteor/natestrauser:publish-performant-counts'
-import { Items } from './collections';
+import { Items } from './collections'
 
 Meteor.publish('performant_counts', function () {
-    return new Counter(
-        'items_count',
-        Items.find({}),
-        100
-    )
-});
+  return new Counter(
+    'items_count',
+    Items.find({}),
+    100
+  )
+})
 
 Meteor.methods({
-    'performant_counts_boot'() {
-        Items.remove({});
+  async 'performant_counts_boot' () {
+    await Items.removeAsync({})
 
-        Items.insert({name: 'Item 1'});
-        Items.insert({name: 'Item 2'});
-        Items.insert({name: 'Item 3'});
-    },
-    'performant_counts_add'() {
-        Items.insert({name: 'Item'});
-    }
-});
+    await Items.insertAsync({ name: 'Item 1' })
+    await Items.insertAsync({ name: 'Item 2' })
+    await Items.insertAsync({ name: 'Item 3' })
+  },
+  async 'performant_counts_add' () {
+    await Items.insertAsync({ name: 'Item' })
+  }
+})

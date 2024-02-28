@@ -1,1 +1,1 @@
-import './boot';
+import './boot'

@@ -1,7 +1,7 @@
-import { Mongo } from 'meteor/mongo';
+import { Mongo } from 'meteor/mongo'
 
-const Items = new Mongo.Collection('optimistic_ui_items');
+const Items = new Mongo.Collection('optimistic_ui_items')
 
 export {
-    Items
+  Items
 }

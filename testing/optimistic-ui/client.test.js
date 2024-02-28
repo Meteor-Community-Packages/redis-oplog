@@ -1,92 +1,102 @@
-import { Meteor } from 'meteor/meteor';
-import { assert } from 'chai';
-import { Items } from './collections';
-import { waitForHandleToBeReady, callWithPromise } from '../lib/sync_utils';
-import { Random } from 'meteor/random';
-import './boot';
+/* eslint-env mocha */
+
+import { Meteor } from 'meteor/meteor'
+import { assert } from 'chai'
+import { Items } from './collections'
+import { waitForHandleToBeReady } from '../lib/sync_utils'
+import { Random } from 'meteor/random'
+import './boot'
 
 describe('Optimistic UI', () => {
-    it('Should not cause a flicker with method calls', function (done) {
-        const context = Random.id();
+  it('Should not cause a flicker with method calls', async function () {
+    const context = Random.id()
 
-        callWithPromise('optimistic_ui.items.insert', {
-            context,
-            liked: ['ZZZ'],
-        }).then(function (itemId) {
-            const handle = Meteor.subscribe('optimistic_ui.items', { _id: itemId });
-            waitForHandleToBeReady(handle).then(function () {
-                const cursor = Items.find({ _id: itemId });
+    return new Promise(async (resolve, reject) => {
+      await Meteor.callAsync('optimistic_ui.items.insert', {
+        context,
+        liked: ['ZZZ']
+      })
+        .then(async function (itemId) {
+          itemId = itemId
+          const handle = Meteor.subscribe('optimistic_ui.items', { _id: itemId })
 
-                let alreadyIn = 0;
-                const observer = cursor.observeChanges({
-                    changed(docId, doc) {
-                        alreadyIn++;
-                        if (alreadyIn > 1) {
-                            done('A flicker was caused.');
-                        }
+          await waitForHandleToBeReady(handle)
 
-                        assert.lengthOf(doc.liked, 2);
-                        assert.isTrue(doc.liked.includes('XXX'));
+          const cursor = Items.find({ _id: itemId })
 
-                        setTimeout(() => {
-                            handle.stop();
-                            observer.stop();
-                            done();
-                        }, 200);
-                    },
-                });
+          let alreadyIn = 0
+          const observer = cursor.observeChanges({
+            changed (docId, doc) {
+              alreadyIn++
+              if (alreadyIn > 1) {
+                handle.stop()
+                observer.stop()
+                reject(new Error('A flicker was caused.'))
+                return
+              }
 
-                const item = cursor.fetch()[0];
-                assert.isObject(item);
+              assert.lengthOf(doc.liked, 2)
+              assert.isTrue(doc.liked.includes('XXX'))
 
-                Meteor.call('optimistic_ui.items.update', item._id, {
-                    $addToSet: {
-                        liked: 'XXX',
-                    },
-                });
-            });
-        });
-    });
+              setTimeout(() => {
+                handle.stop()
+                observer.stop()
+                resolve()
+              }, 200)
+            }
+          })
 
-    it('Should not cause a flicker with isomorphic calls', function (done) {
-        const context = Random.id();
+          const item = cursor.fetch()[0]
+          assert.isObject(item)
 
-        const itemId = Items.insert({
-            context,
-            liked: ['YYY'],
-        });
+          await Meteor.callAsync('optimistic_ui.items.update', item._id, {
+            $addToSet: {
+              liked: 'XXX'
+            }
+          })
+        })
+    })
+  })
 
-        const handle = Meteor.subscribe('optimistic_ui.items', { _id: itemId });
-        waitForHandleToBeReady(handle).then(function () {
-            const cursor = Items.find({ _id: itemId });
+  it('Should not cause a flicker with isomorphic calls', function (done) {
+    const context = Random.id()
 
-            let alreadyIn = 0;
-            const observer = cursor.observeChanges({
-                changed(docId, doc) {
-                    alreadyIn++;
-                    if (alreadyIn > 1) {
-                        done('A flicker was caused.');
-                    }
+    const itemId = Items.insert({
+      context,
+      liked: ['YYY']
+    })
 
-                    assert.lengthOf(doc.liked, 2);
-                    assert.isTrue(doc.liked.includes('XXX'));
+    const handle = Meteor.subscribe('optimistic_ui.items', { _id: itemId })
+    waitForHandleToBeReady(handle).then(function () {
+      const cursor = Items.find({ _id: itemId })
 
-                    setTimeout(() => {
-                        handle.stop();
-                        observer.stop();
-                        done();
-                    }, 200);
-                },
-            });
+      let alreadyIn = 0
+      const observer = cursor.observeChanges({
+        changed (docId, doc) {
+          alreadyIn++
+          if (alreadyIn > 1) {
+            done('A flicker was caused.')
+          }
 
-            const item = cursor.fetch()[0];
-            assert.isObject(item);
+          assert.lengthOf(doc.liked, 2)
+          assert.isTrue(doc.liked.includes('XXX'))
 
-            Items.update(item._id, {
-                $addToSet: {
-                    liked: 'XXX',
-                },
-            });
-        });
-    });
-});
+          setTimeout(() => {
+            handle.stop()
+            observer.stop()
+            done()
+          }, 200)
+        }
+      })
+
+      const item = cursor.fetch()[0]
+      assert.isObject(item)
+
+      Items.update(item._id, {
+        $addToSet: {
+          liked: 'XXX'
+        }
+      })
+    })
+  })
+})
