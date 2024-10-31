@@ -1,76 +1,87 @@
-import { assert } from 'chai';
-import { Collections, config } from './boot';
-import helperGenerator from './lib/helpers';
+/* eslint-env mocha */
 
-const Collection = Collections['Standard'];
+import { assert } from 'chai'
+import { Collections, config } from './boot'
+import helperGenerator from './lib/helpers'
 
-describe('Client-side Mutators', function () {
-    const {
-        subscribe,
-        fetchSync,
-        waitForHandleToBeReady
-    } = helperGenerator(config['Standard'].suffix);
+const Collection = Collections.Standard
 
-    it('Should detect an insert/update and removal from client side', function (done) {
-        const handle = subscribe({
-            client_side_mutators: true
-        });
+describe('Client-side Mutators', function() {
+  const {
+    subscribe,
+    fetchAsync,
+    waitForHandleToBeReady,
+  } = helperGenerator(config.Standard.suffix)
 
-        waitForHandleToBeReady(handle).then(function () {
-            const cursor = Collection.find({ client_side_mutators: true });
+  it('Should detect an insert/update and removal from client side', function(done) {
+    const handle = subscribe({
+      client_side_mutators: true,
+    })
 
-            let testDocId, inChanged = false, inAdded = false, inRemoved = false;
-            const observer = cursor.observeChanges({
-                added(docId, doc) {
-                    if (inAdded) {
-                        return;
-                    }
-                    inAdded = true;
+    waitForHandleToBeReady(handle)
+      .then(async function() {
+        const cursor = Collection.find({ client_side_mutators: true })
 
-                    testDocId = docId;
-                    assert.equal(doc.number, 5);
+        let testDocId
+        let inChanged = false
+        let inAdded = false
+        let inRemoved = false
+        let initialized = false
+        const observer = cursor.observeChanges({
+          added(docId, doc) {
+            if (inAdded || !initialized) {
+              return
+            }
+            inAdded = true
 
-                    setTimeout(async () => {
-                        const result = await fetchSync({ _id: docId });
-                        assert.isArray(result);
-                        assert.lengthOf(result, 1);
-                        assert.equal(result[0].number, 5);
+            testDocId = docId
+            assert.equal(doc.number, 5)
 
-                        Collection.update(docId, {
-                            $set: { number: 10 }
-                        })
-                    }, 100)
-                },
-                changed(docId, doc) {
-                    if (inChanged) {
-                        return;
-                    }
-                    inChanged = true;
-                    assert.equal(docId, testDocId);
-                    assert.equal(doc.number, 10);
+            setTimeout(async () => {
+              const result = await fetchAsync({ _id: docId })
+              assert.isArray(result)
+              assert.lengthOf(result, 1)
+              assert.equal(result[0].number, 5)
 
-                    setTimeout(async () => {
-                        const result = await fetchSync({ _id: docId });
-                        assert.lengthOf(result, 1);
-                        assert.equal(result[0].number, 10);
+              Collection.updateAsync({ _id: docId }, {
+                $set: { number: 10 },
+              })
+            }, 100)
+          },
+          changed(docId, doc) {
+            if (inChanged) {
+              return
+            }
 
-                        Collection.remove(docId)
-                    }, 100);
-                },
-                removed(docId) {
-                    if (inRemoved) {
-                        return;
-                    }
-                    inRemoved = true;
-                    assert.equal(docId, testDocId);
-                    done();
-                }
-            });
+            inChanged = true
+            assert.equal(docId, testDocId)
+            assert.equal(doc.number, 10)
 
-            Collection.insert({
-                client_side_mutators: true,
-                number: 5
-            });
-        });
-    });
-});
+            setTimeout(async () => {
+              const result = await fetchAsync({ _id: docId })
+              assert.lengthOf(result, 1)
+              assert.equal(result[0].number, 10)
+
+              Collection.removeAsync({ _id: docId })
+            }, 100)
+          },
+          removed(docId) {
+            if (inRemoved) {
+              return
+            }
+            inRemoved = true
+            assert.equal(docId, testDocId)
+            observer.stop()
+            done()
+          },
+        })
+        initialized = true;
+
+        await Collection.insertAsync({
+          client_side_mutators: true,
+          number: 5,
+        }).stubPromise
+      })
+      .catch(done)
+  })
+})

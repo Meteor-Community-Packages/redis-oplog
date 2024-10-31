@@ -1,7 +1,7 @@
 import { Mongo } from 'meteor/mongo'
 
-const Items = new Mongo.Collection('collection_defaults_items');
+const Items = new Mongo.Collection('collection_defaults_items')
 
 export {
-    Items
+  Items
 }

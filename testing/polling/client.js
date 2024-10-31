@@ -1,37 +1,45 @@
-import { assert } from 'chai';
-import { Campaigns } from './collections';
-import { Meteor } from 'meteor/meteor';
+/* eslint-env mocha */
 
-describe('Polling', function () {
-    it('Should work!', function (done) {
-        Meteor.callWithPromise('campaign_search_reset').then(function () {
-            const pollingIntervalMs = 100;
+import { assert } from 'chai'
+import { Campaigns } from './collections'
+import { subscribeAsync } from '../lib/helpers'
+import { Meteor } from 'meteor/meteor'
 
-            const handle = Meteor.subscribe(
-                'campaign_search',
-                'John',
-                pollingIntervalMs,
-                function () {
-                    const results = Campaigns.find().fetch();
+describe('Polling', function() {
+  it('Should work!', async function() {
+    await Meteor.callAsync('campaign_search_reset')
+    const pollingIntervalMs = 100
+    const handle = await subscribeAsync(
+      'campaign_search',
+      'John',
+      pollingIntervalMs)
 
-                    assert.lengthOf(results, 2);
+    try {
+      const results = await Campaigns.find().fetchAsync()
 
-                    Meteor.call(
-                        'campaign_search_insert',
-                        {
-                            text: 'John Broman'
-                        },
-                        function () {
-                            setTimeout(() => {
-                                const results = Campaigns.find().fetch();
-                                assert.lengthOf(results, 3);
+      assert.lengthOf(results, 2)
 
-                                done();
-                            }, pollingIntervalMs + 100);
-                        }
-                    );
-                }
-            );
-        });
-    });
-});
+      await Meteor.callAsync('campaign_search_insert', {
+        text: 'John Broman',
+      })
+
+      await new Promise((resolve, reject) => {
+        setTimeout(async () => {
+          try {
+            const results = await Campaigns.find().fetchAsync()
+            assert.lengthOf(results, 3)
+
+            resolve()
+          } catch (e) {
+            reject(e)
+          }
+        }, pollingIntervalMs + 100)
+      })
+
+    } finally {
+      handle.stop()
+    }
+
+  })
+})
+
