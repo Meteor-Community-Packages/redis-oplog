@@ -17,7 +17,7 @@ Npm.depends({
 });
 
 Package.onUse((api) => {
-    api.versionsFrom(['3.0-beta.4', '2.15']);
+    api.versionsFrom(['3.0.1', '2.15']);
     api.use([
         'underscore',
         'ecmascript',
