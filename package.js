@@ -40,9 +40,9 @@ Package.onTest((api) => {
     api.use('cultofcoders:redis-oplog');
 
     // extensions
-    api.use('aldeed:collection2');
-    api.use('reywood:publish-composite');
-    api.use('natestrauser:publish-performant-counts');
+    api.use('aldeed:collection2@4.0.4');
+    api.use('reywood:publish-composite@1.8.12');
+    api.use('natestrauser:publish-performant-counts@0.1.2');
     // api.use('socialize:user-presence@1.0.4');
 
     api.use('ecmascript');
@@ -50,8 +50,8 @@ Package.onTest((api) => {
     api.use('mongo');
     api.use('random');
     api.use('accounts-password');
-    api.use('matb33:collection-hooks');
-    api.use('alanning:roles');
+    api.use("matb33:collection-hooks@2.0.0-rc.4");
+    api.use("alanning:roles@4.0.0");
     api.use('ddp-server');
 
     api.use(['meteortesting:mocha']);
