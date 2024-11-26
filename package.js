@@ -17,7 +17,7 @@ Npm.depends({
 });
 
 Package.onUse((api) => {
-    api.versionsFrom(['3.0.1', '2.15']);
+    api.versionsFrom(['2.15', '3.0.1', '3.1']);
     api.use([
         'underscore',
         'ecmascript',
@@ -50,7 +50,7 @@ Package.onTest((api) => {
     api.use('mongo');
     api.use('random');
     api.use('accounts-password');
-    api.use("matb33:collection-hooks@2.0.0-rc.4");
+    api.use("matb33:collection-hooks@2.0.0-rc.5");
     api.use("alanning:roles@4.0.0");
     api.use('ddp-server');
 
