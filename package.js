@@ -53,7 +53,7 @@ Package.onTest(function(api) {
     api.use('matb33:collection-hooks@1.1.2');
     api.use('alanning:roles@3.5.1');
 
-    api.use(['meteortesting:mocha']);
+    api.use(['meteortesting:mocha@1.0.0', 'meteortesting:mocha-core@1.0.1']);
 
     api.mainModule('testing/main.server.js', 'server');
     api.addFiles('testing/publishComposite/boot.js', 'server');
